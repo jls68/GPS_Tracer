@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toolbar;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onLocationChanged(Location location) {
             Log.d("A7", "Location information received");
+            Log.d("A7","New location latitude = " + location.getLatitude()
+             + ", longitude = " + location.getLongitude());
         }
 
         @Override
@@ -52,6 +55,10 @@ public class MainActivity extends AppCompatActivity {
         } else {
             locatON = true;
         }
+    }
+
+    public void mapButtonHandler(View v) {
+
     }
 
     @Override
