@@ -2,6 +2,4 @@
     <string name="app_name">A7Project</string>
     <string name="lat_name">Latitude</string>
     <string name="long_name">Longitude</string>
-    <string name="lat_nmb"></string>
-    <string name="long_nmb"></string>
 </resources>

@@ -2,28 +2,40 @@ package com.example.james.a7project;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.Toolbar;
 
 public class MainActivity extends AppCompatActivity {
 
     boolean locatON;
     LocationManager locMan;
+    double latitude;
+    double longitude;
 
     LocationListener locLis = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
             Log.d("A7", "Location information received");
-            Log.d("A7","New location latitude = " + location.getLatitude()
-             + ", longitude = " + location.getLongitude());
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+            Log.d("A7","New location latitude = " + latitude
+             + ", longitude = " + longitude);
+            TextView lt = findViewById(R.id.textViewLat);
+            lt.setText("" + latitude);
+            TextView lg = findViewById(R.id.textViewLong);
+            lg.setText("" + longitude);
         }
 
         @Override
@@ -58,7 +70,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void mapButtonHandler(View v) {
-
+        if (locatON) {
+            Uri intentUri = Uri.parse("geo:" + latitude + "," + longitude);
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, intentUri);
+            mapIntent.setPackage("com.google.android.apps.maps");
+            startActivity(mapIntent);
+        }
+        else Toast.makeText(getApplicationContext(), "Waiting on location services to be allowed", Toast.LENGTH_SHORT);
     }
 
     @Override
