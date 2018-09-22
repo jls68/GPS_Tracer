@@ -2,4 +2,5 @@
     <string name="app_name">A7Project</string>
     <string name="lat_name">Latitude</string>
     <string name="long_name">Longitude</string>
+    <string name="pending">...</string>
 </resources>

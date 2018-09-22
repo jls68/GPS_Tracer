@@ -4,6 +4,10 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -13,6 +17,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Toolbar;
@@ -54,11 +61,43 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    public class GraphicsView extends View {
+        //LinearLayout map = findViewById(R.id.myMap);
+
+        public GraphicsView(Context c) {
+            super (c);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
+            float x = 100;
+            float y = 100;
+            //float x = map.getLeft() + 100;
+            //float y = map.getTop() + 100;
+            //if( x >= map.getLeft() &&
+            //    x <= map.getRight() &&
+            //    y <= map.getTop() &&
+            //    y >= map.getBottom()){
+                Log.d("A7", "Drawing point: " + latitude + "," + longitude);
+                Paint p = new Paint();
+                p.setColor(Color.BLUE);
+                canvas.drawCircle(x, y, 10, p);
+            //}
+            invalidate();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         locMan = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+
+        LinearLayout map = findViewById(R.id.myMap);
+        GraphicsView gv = new GraphicsView(this);
+        map.addView(gv);
 
         locatON = false;
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -93,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d("A7", "onResume");
         if (locatON) {
             startLocationUpdates();
         }
@@ -101,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d("A7", "onPause");
         if (locatON) {
             stopLocationUpdates();
         }
@@ -109,6 +150,7 @@ public class MainActivity extends AppCompatActivity {
     public void startLocationUpdates() {
         try {
             locMan.requestLocationUpdates(locMan.GPS_PROVIDER, 2000, 1, locLis);
+            Log.d("A7", "starting LocationUpdates");
         } catch (SecurityException ex) {
             Log.d("A7","Can't start location updates");
             finish();
@@ -117,5 +159,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void stopLocationUpdates() {
         locMan.removeUpdates(locLis);
+        Log.d("A7", "stopping LocationUpdates");
     }
 }
