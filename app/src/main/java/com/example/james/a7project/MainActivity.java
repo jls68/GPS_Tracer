@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -15,6 +16,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -30,6 +32,9 @@ public class MainActivity extends AppCompatActivity {
     LocationManager locMan;
     double latitude;
     double longitude;
+    GraphicsView gv;
+    int count; //onCreate sets this to 0
+    double[][] points; //initialised onCreate
 
     LocationListener locLis = new LocationListener() {
         @Override
@@ -43,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
             lt.setText("" + latitude);
             TextView lg = findViewById(R.id.textViewLong);
             lg.setText("" + longitude);
+            points[count][0] = latitude;
+            points[count][1] = longitude;
+            count++;
+            gv.invalidate();
         }
 
         @Override
@@ -62,30 +71,40 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public class GraphicsView extends View {
-        //LinearLayout map = findViewById(R.id.myMap);
+        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+
+        LinearLayout map = findViewById(R.id.myMap);
+        //0.03 are degrees of latitude I want map to cover and the map is 500px wide
+        double scale = width / 0.03;
 
         public GraphicsView(Context c) {
-            super (c);
+            super(c);
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
-            float x = 100;
-            float y = 100;
-            //float x = map.getLeft() + 100;
-            //float y = map.getTop() + 100;
-            //if( x >= map.getLeft() &&
-            //    x <= map.getRight() &&
-            //    y <= map.getTop() &&
-            //    y >= map.getBottom()){
-                Log.d("A7", "Drawing point: " + latitude + "," + longitude);
-                Paint p = new Paint();
-                p.setColor(Color.BLUE);
-                canvas.drawCircle(x, y, 10, p);
-            //}
-            invalidate();
+            Paint p = new Paint();
+            p.setColor(Color.BLUE);
+            int i = 0;
+            while (points[i][0] != 0.0) {
+                float x = (float) points[i][0];
+                float y = (float) points[i][1];
+                //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
+                //left bottem (-37.797,175.326) Jansen Park
+                //range of map will be roughily 0.03 degrees
+                Log.d("A7", "Got point: " + x + "," + y + " width: " + width);
+                x -= 175.3;
+                y *= -1;
+                y -= 37.78;
+                //double x = 175.326 - 175.3;
+                //double y = -37.781 - -37.797;
+                //adjust for scale. ratio of 0.03 degree equals width of map
+                x *= scale;
+                y *= scale;
+                Log.d("A7", "Drawing point: " + x + "," + y);
+                canvas.drawCircle(x, y, 5, p);
+            }
         }
     }
 
@@ -96,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         locMan = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 
         LinearLayout map = findViewById(R.id.myMap);
-        GraphicsView gv = new GraphicsView(this);
+        gv = new GraphicsView(this);
         map.addView(gv);
 
         locatON = false;
@@ -106,6 +125,9 @@ public class MainActivity extends AppCompatActivity {
         } else {
             locatON = true;
         }
+        
+        points = new double[3000][2];
+        count = 0;
     }
 
     public void mapButtonHandler(View v) {
