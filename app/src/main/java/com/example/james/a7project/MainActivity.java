@@ -34,9 +34,21 @@ public class MainActivity extends AppCompatActivity {
     double longitude;
     GraphicsView gv;
     int count; //onCreate sets this to 0
-    Line[] lines;
+    Line[] lines = new Line[3000];
+
+    //left top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
+    //right bottom (-37.797,175.326) Jansen Park
+    //range of map will be roughly 0.02 degrees
+    double InitLat = -37.781;
+    double InitLon = 175.3;
 
     LocationListener locLis = new LocationListener() {
+
+        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
+        int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+        //0.02 are degrees of latitude I want the map to cover
+        double scale = width / 0.02;
+
         @Override
         public void onLocationChanged(Location location) {
             Log.d("A7", "Location information received");
@@ -48,13 +60,33 @@ public class MainActivity extends AppCompatActivity {
             lt.setText("" + latitude);
             TextView lg = findViewById(R.id.textViewLong);
             lg.setText("" + longitude);
-            //points[count][0] = latitude;
-            //points[count][1] = longitude;
-            //double i = 0.001 * count;
-            //points[count][0] = i + 175.3;
-            //points[count][1] = -i + -37.781;
-            //count++;
-            //gv.invalidate();
+
+            Log.d("A7", "scale is " + scale);
+            double adjustedLat = (-latitude + InitLat) * scale;
+            double adjustedLon = (longitude - InitLon) * scale;
+            //double adjustedLat = (latitude - 37.4);
+            //double adjustedLon = (-longitude - 122);
+
+            if(adjustedLat < 0) adjustedLat = 0;
+            if(adjustedLon < 0) adjustedLon = 0;
+            if(adjustedLat > width) adjustedLat = width;
+            if(adjustedLon > height) adjustedLon = height;
+
+            //get information for new line
+            if(count > 0) {
+                //adjust for scale. ratio of 0.03 degree equals width of map
+                lines[count] = new Line(lines[count - 1], adjustedLat, adjustedLon);
+                Log.d("A7", "Created line " + count + " from " + lines[count].getStartX() + "," + lines[count].getStartY()
+                                    + " to " + lines[count].getEndX() + "," + lines[count].getEndY());
+                count++;
+            }
+            else {
+                lines[0] = new Line(adjustedLat, adjustedLon);
+                count++;
+            }
+            Log.d("A7","Stored location " + count + ": latitude = " + adjustedLat
+                    + ", longitude = " + adjustedLon);
+            gv.invalidate();
         }
 
         @Override
@@ -74,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     class Line {
-        float startX, startY, endX, endY;
+        private float startX, startY, endX, endY;
         public Line(double startX, double startY, double endX, double endY) {
             this.startX = (float)startX;
             this.startY = (float)startY;
@@ -86,25 +118,35 @@ public class MainActivity extends AppCompatActivity {
         public Line(double startX, double startY) {
             this.startX = (float)startX;
             this.startY = (float)startY;
-            this.startX = (float)startX;
-            this.startY = (float)startY;
+            this.endX = (float)startX;
+            this.endY = (float)startY;
         }
 
         public Line(Line previous, double endX, double endY) {
-            this.startX = previous.startX;
-            this.startY = previous.startY;
+            this.startX = previous.getEndX();
+            this.startY = previous.getEndY();
             this.endX = (float)endX;
             this.endY = (float)endY;
         }
 
+        public float getStartX() {
+            return startX;
+        }
+
+        public float getStartY() {
+            return startY;
+        }
+
+        public float getEndX() {
+            return endX;
+        }
+
+        public float getEndY() {
+            return endY;
+        }
     }
 
     public class GraphicsView extends View {
-        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-
-        LinearLayout map = findViewById(R.id.myMap);
-        //0.03 are degrees of latitude I want map to cover and the map is 500px wide
-        double scale = width / 0.03;
 
         public GraphicsView(Context c) {
             super(c);
@@ -115,33 +157,15 @@ public class MainActivity extends AppCompatActivity {
             super.onDraw(canvas);
             Paint p = new Paint();
             p.setColor(Color.BLUE);
-
-            //get information for new line
-            double j = 0.001 * count;
-            if(count == 0) {
-                //lines[0] = new Line(latitude - 175.3, -longitude - 37.781);
-                lines[0] = new Line(j, j);
+            Log.d("A7", "onDraw");
+            if(count > 1) {
+                Log.d("A7", "Drawing to point " + (count - 1));
+                Log.d("A7", lines[count - 1].getEndX() + "," + lines[count - 1].getEndY());
+                //draw all lines
+                for (int i = 0; i < count; i++) {
+                    canvas.drawLine(lines[i].getStartX(), lines[i].getStartY(), lines[i].getEndX(), lines[i].getEndY(), p);
+                }
             }
-            else {
-                //adjust for scale. ratio of 0.03 degree equals width of map
-                //lines[count] = new Line(lines[count - 1], (latitude - 175.3) * scale, (-longitude - 37.781) * scale);
-                lines[count] = new Line(lines[count - 1], j * scale, j * scale);
-            }
-
-            //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
-            //left bottem (-37.797,175.326) Jansen Park
-            //range of map will be roughily 0.03 degrees
-            //double x = 175.326 - 175.3;
-            //double y = -37.781 - -37.797;
-
-            Log.d("A7", "Drawing to point: " + lines[count].endX + "," + lines[count].endY);
-            //for (int i = 0; i<= count; i++) {
-            int i = count;
-                canvas.drawLine(lines[i].startX, lines[i].startY, lines[i].endX, lines[i].endY, p);
-            //}
-
-            count++;
-            invalidate();
         }
     }
 
@@ -162,8 +186,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             locatON = true;
         }
-        
-        lines = new Line[3000];
+
         count = 0;
     }
 
