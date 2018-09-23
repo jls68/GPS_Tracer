@@ -33,26 +33,25 @@ public class MainActivity extends AppCompatActivity {
     double latitude;
     double longitude;
     GraphicsView gv;
-    int count; //onCreate sets this to 0
+    int count = 0; //onCreate sets this to 0
     Line[] lines = new Line[3000];
 
-    //left top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
-    //right bottom (-37.797,175.326) Jansen Park
-    //range of map will be roughly 0.02 degrees
-    double InitLat = -37.781;
-    double InitLon = 175.3;
+
+    double InitLat;
+    double InitLon;
 
     LocationListener locLis = new LocationListener() {
 
         int width = Resources.getSystem().getDisplayMetrics().widthPixels;
         int height = Resources.getSystem().getDisplayMetrics().heightPixels;
-        //0.02 are degrees of latitude I want the map to cover
-        double scale = width / 0.02;
+        //0.01 are degrees of latitude I want the map to cover
+        double degrees = 0.02;
+        double scale = width / degrees;
 
         @Override
         public void onLocationChanged(Location location) {
             Log.d("A7", "Location information received");
-            latitude = location.getLatitude();
+            latitude = -location.getLatitude();
             longitude = location.getLongitude();
             Log.d("A7","New location latitude = " + latitude
              + ", longitude = " + longitude);
@@ -61,8 +60,15 @@ public class MainActivity extends AppCompatActivity {
             TextView lg = findViewById(R.id.textViewLong);
             lg.setText("" + longitude);
 
-            Log.d("A7", "scale is " + scale);
-            double adjustedLat = (-latitude + InitLat) * scale;
+            //set top left corner so initial position is centre
+            if(count == 0) {
+                InitLat = latitude - (degrees/2);
+                InitLon = longitude - (degrees/2);
+            }
+
+            Log.d("A7", "scale is " + scale + ". Top left corner is "
+                    + InitLat + "," + InitLon);
+            double adjustedLat = (latitude - InitLat) * scale;
             double adjustedLon = (longitude - InitLon) * scale;
             //double adjustedLat = (latitude - 37.4);
             //double adjustedLon = (-longitude - 122);
@@ -74,14 +80,14 @@ public class MainActivity extends AppCompatActivity {
 
             //get information for new line
             if(count > 0) {
-                //adjust for scale. ratio of 0.03 degree equals width of map
-                lines[count] = new Line(lines[count - 1], adjustedLat, adjustedLon);
+                //adjust for scale. ratio of 0.01 degree equals width of map
+                lines[count] = new Line(lines[count - 1], adjustedLon, adjustedLat);
                 Log.d("A7", "Created line " + count + " from " + lines[count].getStartX() + "," + lines[count].getStartY()
                                     + " to " + lines[count].getEndX() + "," + lines[count].getEndY());
                 count++;
             }
             else {
-                lines[0] = new Line(adjustedLat, adjustedLon);
+                lines[0] = new Line(adjustedLon, adjustedLat);
                 count++;
             }
             Log.d("A7","Stored location " + count + ": latitude = " + adjustedLat
@@ -186,8 +192,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             locatON = true;
         }
-
-        count = 0;
     }
 
     public void mapButtonHandler(View v) {
@@ -242,5 +246,12 @@ public class MainActivity extends AppCompatActivity {
     public void stopLocationUpdates() {
         locMan.removeUpdates(locLis);
         Log.d("A7", "stopping LocationUpdates");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("A7", "onDestroy");
+        count = 0;
     }
 }
