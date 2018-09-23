@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     double longitude;
     GraphicsView gv;
     int count; //onCreate sets this to 0
-    double[][] points; //initialised onCreate
+    Line[] lines;
 
     LocationListener locLis = new LocationListener() {
         @Override
@@ -48,10 +48,13 @@ public class MainActivity extends AppCompatActivity {
             lt.setText("" + latitude);
             TextView lg = findViewById(R.id.textViewLong);
             lg.setText("" + longitude);
-            points[count][0] = latitude;
-            points[count][1] = longitude;
-            count++;
-            gv.invalidate();
+            //points[count][0] = latitude;
+            //points[count][1] = longitude;
+            //double i = 0.001 * count;
+            //points[count][0] = i + 175.3;
+            //points[count][1] = -i + -37.781;
+            //count++;
+            //gv.invalidate();
         }
 
         @Override
@@ -70,6 +73,32 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    class Line {
+        float startX, startY, endX, endY;
+        public Line(double startX, double startY, double endX, double endY) {
+            this.startX = (float)startX;
+            this.startY = (float)startY;
+            this.endX = (float)endX;
+            this.endY = (float)endY;
+        }
+
+        //for the first point
+        public Line(double startX, double startY) {
+            this.startX = (float)startX;
+            this.startY = (float)startY;
+            this.startX = (float)startX;
+            this.startY = (float)startY;
+        }
+
+        public Line(Line previous, double endX, double endY) {
+            this.startX = previous.startX;
+            this.startY = previous.startY;
+            this.endX = (float)endX;
+            this.endY = (float)endY;
+        }
+
+    }
+
     public class GraphicsView extends View {
         int width = Resources.getSystem().getDisplayMetrics().widthPixels;
 
@@ -86,25 +115,33 @@ public class MainActivity extends AppCompatActivity {
             super.onDraw(canvas);
             Paint p = new Paint();
             p.setColor(Color.BLUE);
-            int i = 0;
-            while (points[i][0] != 0.0) {
-                float x = (float) points[i][0];
-                float y = (float) points[i][1];
-                //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
-                //left bottem (-37.797,175.326) Jansen Park
-                //range of map will be roughily 0.03 degrees
-                Log.d("A7", "Got point: " + x + "," + y + " width: " + width);
-                x -= 175.3;
-                y *= -1;
-                y -= 37.78;
-                //double x = 175.326 - 175.3;
-                //double y = -37.781 - -37.797;
-                //adjust for scale. ratio of 0.03 degree equals width of map
-                x *= scale;
-                y *= scale;
-                Log.d("A7", "Drawing point: " + x + "," + y);
-                canvas.drawCircle(x, y, 5, p);
+
+            //get information for new line
+            double j = 0.001 * count;
+            if(count == 0) {
+                //lines[0] = new Line(latitude - 175.3, -longitude - 37.781);
+                lines[0] = new Line(j, j);
             }
+            else {
+                //adjust for scale. ratio of 0.03 degree equals width of map
+                //lines[count] = new Line(lines[count - 1], (latitude - 175.3) * scale, (-longitude - 37.781) * scale);
+                lines[count] = new Line(lines[count - 1], j * scale, j * scale);
+            }
+
+            //right top (-37.781,175.300) intersection of Ruakura Rd and Wairere Dr
+            //left bottem (-37.797,175.326) Jansen Park
+            //range of map will be roughily 0.03 degrees
+            //double x = 175.326 - 175.3;
+            //double y = -37.781 - -37.797;
+
+            Log.d("A7", "Drawing to point: " + lines[count].endX + "," + lines[count].endY);
+            //for (int i = 0; i<= count; i++) {
+            int i = count;
+                canvas.drawLine(lines[i].startX, lines[i].startY, lines[i].endX, lines[i].endY, p);
+            //}
+
+            count++;
+            invalidate();
         }
     }
 
@@ -126,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
             locatON = true;
         }
         
-        points = new double[3000][2];
+        lines = new Line[3000];
         count = 0;
     }
 
